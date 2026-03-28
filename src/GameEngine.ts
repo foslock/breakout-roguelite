@@ -298,7 +298,7 @@ export class GameEngine {
     const speed = Math.min(baseSpeed + stats.ballSpeedBonus, BALL_MAX_SPEED * 1.5);
     for (const ball of this.balls) {
       if (ball.vy === 0) { // only launch balls that haven't been launched
-        const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.4;
+        const angle = (Math.random() - 0.5) * 0.3; // 0 = straight up, ±0.15 rad variance
         ball.vx = Math.sin(angle) * speed;
         ball.vy = Math.cos(angle) * speed * -1;
       }
