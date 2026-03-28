@@ -2,9 +2,10 @@ import type { UpgradeDef, PlayerState, DerivedStats } from './types.ts';
 import {
   PADDLE_BASE_WIDTH, PADDLE_BASE_SPEED, PADDLE_WIDTH_PER_LEVEL, PADDLE_SPEED_PER_LEVEL,
   MULTI_BALL_CHANCE_PER_LEVEL, STRONG_BRICK_CHANCE_PER_LEVEL, BALL_POWER_PER_LEVEL,
+  BALL_SPEED_BONUS_PER_LEVEL,
   BASE_COLS, BASE_ROWS, COLS_PER_LEVEL, ROWS_PER_LEVEL,
   UPGRADE_PADDLE_WIDTH, UPGRADE_PADDLE_SPEED, UPGRADE_AUTO_PADDLE,
-  UPGRADE_BALL_POWER, UPGRADE_MULTI_BALL,
+  UPGRADE_BALL_POWER, UPGRADE_BALL_SPEED, UPGRADE_MULTI_BALL,
   UPGRADE_LEVEL_COLS, UPGRADE_LEVEL_ROWS, UPGRADE_STRONG_BRICKS,
 } from './constants.ts';
 
@@ -44,6 +45,15 @@ export const UPGRADES: UpgradeDef[] = [
     getDescription: (lvl) => `Ball deals ${1 + lvl * BALL_POWER_PER_LEVEL} damage`,
     maxLevel: 4,
     costs: [500, 1000, 2000, 4000],
+  },
+  {
+    id: UPGRADE_BALL_SPEED,
+    category: 'ball',
+    name: 'Ball Speed',
+    icon: '▶',
+    getDescription: (lvl) => `Ball +${lvl * BALL_SPEED_BONUS_PER_LEVEL} px/s faster`,
+    maxLevel: 4,
+    costs: [150, 300, 600, 1200],
   },
   {
     id: UPGRADE_MULTI_BALL,
@@ -95,6 +105,7 @@ export function getDerivedStats(state: PlayerState): DerivedStats {
   const paddleSpeedLvl  = ups[UPGRADE_PADDLE_SPEED]  ?? 0;
   const autoPaddleLvl   = ups[UPGRADE_AUTO_PADDLE]   ?? 0;
   const ballPowerLvl    = ups[UPGRADE_BALL_POWER]    ?? 0;
+  const ballSpeedLvl    = ups[UPGRADE_BALL_SPEED]    ?? 0;
   const multiBallLvl    = ups[UPGRADE_MULTI_BALL]    ?? 0;
   const levelColsLvl    = ups[UPGRADE_LEVEL_COLS]    ?? 0;
   const levelRowsLvl    = ups[UPGRADE_LEVEL_ROWS]    ?? 0;
@@ -105,6 +116,7 @@ export function getDerivedStats(state: PlayerState): DerivedStats {
     paddleSpeed:      PADDLE_BASE_SPEED + paddleSpeedLvl * PADDLE_SPEED_PER_LEVEL,
     autoPaddle:       autoPaddleLvl >= 1,
     ballPower:        1 + ballPowerLvl * BALL_POWER_PER_LEVEL,
+    ballSpeedBonus:   ballSpeedLvl * BALL_SPEED_BONUS_PER_LEVEL,
     multiBallChance:  multiBallLvl * MULTI_BALL_CHANCE_PER_LEVEL,
     levelCols:        BASE_COLS + levelColsLvl * COLS_PER_LEVEL,
     levelRows:        BASE_ROWS + levelRowsLvl * ROWS_PER_LEVEL,

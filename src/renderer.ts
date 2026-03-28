@@ -68,12 +68,43 @@ export function drawBackground(
   h: number,
   chaosLevel: number,
   time: number,
+  bgEnergy = 0,
 ): void {
   ctx.fillStyle = BG_COLOR;
   ctx.fillRect(0, 0, w, h);
 
+  // Swirling color blobs — slow sinusoidal motion, hue-rotating, dark enough
+  // not to interfere with game elements
+  const baseAlpha = 0.055 + bgEnergy * 0.18 + chaosLevel * 0.018;
+
+  // Each blob: [freqX, freqY, phaseX, phaseY, ampX, ampY, baseX, baseY, hueOffset, hueSpeed, sizeBase]
+  const blobs: [number, number, number, number, number, number, number, number, number, number, number][] = [
+    [0.09, 0.07, 0.0,  1.1,  0.42, 0.38, 0.5, 0.4,  270, 9,  0.75],
+    [0.13, 0.11, 2.3,  0.5,  0.38, 0.42, 0.5, 0.55, 190, -7, 0.65],
+    [0.07, 0.15, 1.5,  3.2,  0.45, 0.35, 0.5, 0.5,  320, 11, 0.70],
+    [0.17, 0.08, 3.8,  2.0,  0.35, 0.45, 0.5, 0.45, 210, -9, 0.60],
+    [0.05, 0.19, 0.9,  4.1,  0.4,  0.4,  0.5, 0.5,  160, 13, 0.55],
+  ];
+
+  for (let i = 0; i < blobs.length; i++) {
+    const [fx, fy, px, py, ax, ay, bx, by, hOff, hSpd, szBase] = blobs[i];
+    const blobX = w * (bx + ax * Math.sin(time * fx * Math.PI * 2 + px));
+    const blobY = h * (by + ay * Math.cos(time * fy * Math.PI * 2 + py));
+    const hue = ((hOff + time * hSpd) % 360 + 360) % 360;
+    const radius = Math.min(w, h) * (szBase + 0.18 * Math.sin(time * fx * 1.7 + i * 0.8));
+    const alpha = baseAlpha * (0.7 + 0.3 * Math.sin(time * 0.5 + i * 1.3));
+
+    const grad = ctx.createRadialGradient(blobX, blobY, 0, blobX, blobY, radius);
+    grad.addColorStop(0,   `hsla(${hue}, 90%, 22%, ${alpha * 1.6})`);
+    grad.addColorStop(0.45, `hsla(${(hue + 35) % 360}, 70%, 16%, ${alpha})`);
+    grad.addColorStop(1,   'hsla(0, 0%, 0%, 0)');
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+  }
+
   // Subtle grid lines
-  ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.018)';
   ctx.lineWidth = 1;
   const gridSize = 40;
   for (let x = 0; x < w; x += gridSize) {
@@ -83,13 +114,14 @@ export function drawBackground(
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
   }
 
-  // Edge glow grows with chaos
-  if (chaosLevel > 0) {
+  // Edge vignette grows with chaos + energy
+  const vigAlpha = Math.min(0.35, chaosLevel * 0.06 + bgEnergy * 0.1);
+  if (vigAlpha > 0.01) {
     const pulse = 0.5 + 0.5 * Math.sin(time * 3);
-    const glowAlpha = Math.min(0.25, chaosLevel * 0.06) * (0.7 + 0.3 * pulse);
-    const grad = ctx.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, Math.max(w, h));
+    const grad = ctx.createRadialGradient(w / 2, h / 2, h * 0.25, w / 2, h / 2, Math.max(w, h) * 0.85);
+    const hueShift = ((270 + time * 15) % 360 + 360) % 360;
     grad.addColorStop(0, 'transparent');
-    grad.addColorStop(1, `rgba(128, 0, 255, ${glowAlpha})`);
+    grad.addColorStop(1, `hsla(${hueShift}, 100%, 15%, ${vigAlpha * (0.7 + 0.3 * pulse)})`);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
   }
@@ -537,25 +569,25 @@ export function drawShop(
   // ── Header ──
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `12px ${FONT}`;
+  ctx.font = `16px ${FONT}`;
   ctx.shadowColor = '#cc44ff';
   ctx.shadowBlur = 14;
   ctx.fillStyle = '#cc44ff';
-  ctx.fillText('UPGRADE SHOP', w / 2, 26);
+  ctx.fillText('UPGRADE SHOP', w / 2, 30);
   ctx.shadowBlur = 0;
 
   const stats = getDerivedStats(playerState);
   const roundEst = Math.round(estimateRoundPointsLocal(stats));
-  ctx.font = `7px ${FONT}`;
+  ctx.font = `10px ${FONT}`;
   ctx.fillStyle = '#fbbf24';
   ctx.shadowColor = '#f59e0b';
   ctx.shadowBlur = 8;
-  ctx.fillText(`${playerState.totalPoints} PTS`, w / 2, 50);
+  ctx.fillText(`${playerState.totalPoints} PTS`, w / 2, 58);
   ctx.shadowBlur = 0;
 
-  ctx.font = `6px ${FONT}`;
+  ctx.font = `8px ${FONT}`;
   ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  ctx.fillText(`~${roundEst} pts/round`, w / 2, 64);
+  ctx.fillText(`~${roundEst} pts/round`, w / 2, 75);
 
   // ── Cards layout ──
   const cols = w < 480 ? 2 : 4;
@@ -582,14 +614,14 @@ export function drawShop(
     const catUpgrades = UPGRADES.filter(u => u.category === cat.key);
 
     // Category label
-    ctx.font = `7px ${FONT}`;
+    ctx.font = `10px ${FONT}`;
     ctx.textAlign = 'left';
     ctx.fillStyle = cat.color;
     ctx.shadowColor = cat.color;
     ctx.shadowBlur = 8;
-    ctx.fillText(`— ${cat.label} —`, SHOP_PADDING, rowY + 12);
+    ctx.fillText(`— ${cat.label} —`, SHOP_PADDING, rowY + 14);
     ctx.shadowBlur = 0;
-    rowY += 22;
+    rowY += 28;
 
     // Cards in rows of `cols`
     for (let i = 0; i < catUpgrades.length; i += cols) {
@@ -636,7 +668,7 @@ export function drawShop(
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  ctx.font = `9px ${FONT}`;
+  ctx.font = `12px ${FONT}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#00ff88';
@@ -644,11 +676,11 @@ export function drawShop(
 
   // Scroll hint if content overflows
   if (scroll.maxScroll < 0) {
-    ctx.font = `6px ${FONT}`;
+    ctx.font = `8px ${FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
     ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.fillText('scroll for more', w / 2, h - SHOP_FOOTER_H + 12);
+    ctx.fillText('scroll for more', w / 2, h - SHOP_FOOTER_H + 14);
   }
 
   ctx.textAlign = 'left';
@@ -692,23 +724,23 @@ function drawUpgradeCard(
   ctx.shadowBlur = 0;
 
   // Icon + Name
-  ctx.font = `14px ${FONT}`;
+  ctx.font = `18px ${FONT}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillStyle = maxed ? '#555' : '#ffffff';
   // Use a simple character since the font may not render emoji
   const iconText = upg.icon.length <= 2 ? upg.icon : '★';
-  ctx.fillText(iconText, x + w / 2, y + 10);
+  ctx.fillText(iconText, x + w / 2, y + 12);
 
-  ctx.font = `6px ${FONT}`;
+  ctx.font = `8px ${FONT}`;
   ctx.fillStyle = maxed ? '#445' : accentColor;
   const nameLines = wrapText(ctx, upg.name.toUpperCase(), w - 8);
   for (let i = 0; i < nameLines.length; i++) {
-    ctx.fillText(nameLines[i], x + w / 2, y + 32 + i * 10);
+    ctx.fillText(nameLines[i], x + w / 2, y + 40 + i * 12);
   }
 
   // Level pips
-  const pipY = y + 56;
+  const pipY = y + 68;
   const pipSize = 6;
   const pipGap = 3;
   const totalPipW = upg.maxLevel * (pipSize + pipGap) - pipGap;
@@ -725,25 +757,25 @@ function drawUpgradeCard(
   }
 
   // Description
-  ctx.font = `5px ${FONT}`;
+  ctx.font = `7px ${FONT}`;
   ctx.fillStyle = maxed ? '#445' : 'rgba(255,255,255,0.5)';
   const nextLevel = Math.min(currentLevel + 1, upg.maxLevel);
   const descLines = wrapText(ctx, upg.getDescription(nextLevel), w - 10);
   for (let i = 0; i < Math.min(descLines.length, 2); i++) {
-    ctx.fillText(descLines[i], x + w / 2, y + 70 + i * 10);
+    ctx.fillText(descLines[i], x + w / 2, y + 84 + i * 12);
   }
 
   // Buy button / cost / MAXED
-  const btnY = y + h - 30;
+  const btnY = y + h - 36;
   const btnW = w - 16;
-  const btnH = 22;
+  const btnH = 26;
   const btnX2 = x + 8;
 
   if (maxed) {
     ctx.fillStyle = 'rgba(255,255,255,0.05)';
     drawRoundRect(ctx, btnX2, btnY, btnW, btnH, 4);
     ctx.fill();
-    ctx.font = `6px ${FONT}`;
+    ctx.font = `8px ${FONT}`;
     ctx.fillStyle = '#445566';
     ctx.fillText('MAXED', x + w / 2, btnY + btnH / 2 + 1);
   } else {
@@ -756,7 +788,7 @@ function drawUpgradeCard(
     ctx.strokeStyle = btnColor;
     ctx.lineWidth = 1;
     ctx.stroke();
-    ctx.font = `6px ${FONT}`;
+    ctx.font = `8px ${FONT}`;
     ctx.fillStyle = canBuy ? accentColor : '#445566';
     ctx.fillText(`${cost} PTS`, x + w / 2, btnY + btnH / 2 + 1);
   }

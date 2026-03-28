@@ -42,6 +42,9 @@ export const STRONG_BRICK_CHANCE_PER_LEVEL = 0.18;
 // Ball power
 export const BALL_POWER_PER_LEVEL = 1;
 
+// Ball speed upgrade
+export const BALL_SPEED_BONUS_PER_LEVEL = 40; // px/s added per upgrade level
+
 // Particle
 export const BASE_PARTICLES_PER_BRICK = 9;
 export const CHAOS_PARTICLES_PER_BALL = 2;
@@ -72,15 +75,16 @@ export const BG_COLOR = '#080812';
 // Shop layout
 export const SHOP_PADDING = 14;
 export const SHOP_CARD_GAP = 10;
-export const SHOP_CARD_H = 148;
-export const SHOP_HEADER_H = 80;
-export const SHOP_FOOTER_H = 80;
+export const SHOP_CARD_H = 172;
+export const SHOP_HEADER_H = 92;
+export const SHOP_FOOTER_H = 84;
 
 // Upgrade IDs
 export const UPGRADE_PADDLE_WIDTH  = 'paddle_width';
 export const UPGRADE_PADDLE_SPEED  = 'paddle_speed';
 export const UPGRADE_AUTO_PADDLE   = 'auto_paddle';
 export const UPGRADE_BALL_POWER    = 'ball_power';
+export const UPGRADE_BALL_SPEED    = 'ball_speed';
 export const UPGRADE_MULTI_BALL    = 'multi_ball';
 export const UPGRADE_LEVEL_COLS    = 'level_cols';
 export const UPGRADE_LEVEL_ROWS    = 'level_rows';

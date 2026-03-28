@@ -75,6 +75,7 @@ export interface DerivedStats {
   paddleSpeed: number;
   autoPaddle: boolean;
   ballPower: number;
+  ballSpeedBonus: number;
   multiBallChance: number;
   levelCols: number;
   levelRows: number;

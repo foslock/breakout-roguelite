@@ -16,6 +16,7 @@ import {
   BALL_BASE_SPEED, BALL_SPEED_PER_ROUND, BALL_MAX_SPEED,
   BALL_RADIUS, BALL_TRAIL_LENGTH, PADDLE_HEIGHT, PADDLE_BOTTOM_OFFSET,
   MAX_BALLS, WIN_BONUS_PERCENT, SHOP_FOOTER_H, SHOP_HEADER_H,
+  SHOP_CARD_H, SHOP_CARD_GAP,
 } from './constants.ts';
 
 export class GameEngine {
@@ -52,6 +53,14 @@ export class GameEngine {
   private pointerX = 0;
   private isPointerDown = false;
   private lastPointerX = 0;
+
+  // Auto-pilot
+  private autoPaddleOffset = 0;
+  private autoPaddleOffsetTarget = 0;
+  private autoPaddleOffsetTimer = 0;
+
+  // Background energy (driven by hits, decays over time)
+  private bgEnergy = 0;
 
   // Timing
   private lastTime = 0;
@@ -284,7 +293,9 @@ export class GameEngine {
 
   private launchBalls(): void {
     if (this.state !== 'LAUNCH') return;
-    const speed = Math.min(BALL_BASE_SPEED + BALL_SPEED_PER_ROUND * (this.playerState.round - 1), BALL_MAX_SPEED);
+    const stats = getDerivedStats(this.playerState);
+    const baseSpeed = Math.min(BALL_BASE_SPEED + BALL_SPEED_PER_ROUND * (this.playerState.round - 1), BALL_MAX_SPEED);
+    const speed = Math.min(baseSpeed + stats.ballSpeedBonus, BALL_MAX_SPEED * 1.5);
     for (const ball of this.balls) {
       if (ball.vy === 0) { // only launch balls that haven't been launched
         const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.4;
@@ -341,9 +352,9 @@ export class GameEngine {
       UPGRADES.filter(u => u.category === 'level').length,
     ];
     for (const cnt of catCounts) {
-      contentH += 22; // category label
+      contentH += 28; // category label
       const rows = Math.ceil(cnt / cols);
-      contentH += rows * (148 + 10);
+      contentH += rows * (SHOP_CARD_H + SHOP_CARD_GAP);
       contentH += 8;
     }
     const visibleH = this.H - SHOP_HEADER_H - SHOP_FOOTER_H;
@@ -392,6 +403,9 @@ export class GameEngine {
       this.screenFlash.alpha = Math.max(0, this.screenFlash.alpha - this.screenFlash.decay * dt);
     }
 
+    // Background energy decay
+    this.bgEnergy = Math.max(0, this.bgEnergy - dt * 0.8);
+
     if (this.state === 'LAUNCH') {
       this.updateLaunch(dt);
     } else if (this.state === 'PLAYING') {
@@ -416,11 +430,11 @@ export class GameEngine {
       }
     }
 
-    // Move paddle toward pointer (or auto-follow)
-    if (stats.autoPaddle) {
-      movePaddleToward(this.paddle, this.pointerX, stats.paddleSpeed, this.W, dt);
-    } else if (this.isPointerDown) {
+    // Move paddle toward pointer; player touch overrides auto-pilot
+    if (this.isPointerDown) {
       movePaddleToward(this.paddle, this.pointerX, stats.paddleSpeed * 3, this.W, dt);
+    } else if (stats.autoPaddle) {
+      movePaddleToward(this.paddle, this.pointerX, stats.paddleSpeed, this.W, dt);
     } else {
       movePaddleToward(this.paddle, this.pointerX, stats.paddleSpeed, this.W, dt);
     }
@@ -432,15 +446,21 @@ export class GameEngine {
     const stats = getDerivedStats(this.playerState);
 
     // Paddle movement
-    if (stats.autoPaddle) {
-      // Find nearest alive ball
+    if (stats.autoPaddle && !this.isPointerDown) {
+      // Update slowly-drifting aim offset so bounces aren't perfectly centered
+      this.autoPaddleOffsetTimer -= dt;
+      if (this.autoPaddleOffsetTimer <= 0) {
+        const halfPaddle = this.paddle.width / 2;
+        this.autoPaddleOffsetTarget = (Math.random() * 2 - 1) * halfPaddle * 0.5;
+        this.autoPaddleOffsetTimer = 0.5 + Math.random() * 0.9;
+      }
+      this.autoPaddleOffset += (this.autoPaddleOffsetTarget - this.autoPaddleOffset) * Math.min(1, dt * 4);
+
+      // Track the ball closest to the paddle (highest y = most dangerous to miss)
       const aliveBalls = this.balls.filter(b => b.alive);
       if (aliveBalls.length > 0) {
-        const nearest = aliveBalls.reduce((a, b) =>
-          Math.abs(b.x - (this.paddle.x + this.paddle.width / 2)) <
-          Math.abs(a.x - (this.paddle.x + this.paddle.width / 2)) ? b : a
-        );
-        movePaddleToward(this.paddle, nearest.x, stats.paddleSpeed, this.W, dt);
+        const target = aliveBalls.reduce((a, b) => b.y > a.y ? b : a);
+        movePaddleToward(this.paddle, target.x + this.autoPaddleOffset, stats.paddleSpeed, this.W, dt);
       }
     } else {
       movePaddleToward(this.paddle, this.pointerX, stats.paddleSpeed * 2.5, this.W, dt);
@@ -476,6 +496,7 @@ export class GameEngine {
     if (result.paddleHit) {
       this.particles.paddleHit(result.paddleHitX, this.paddle.y, this.chaosLevel);
       this.triggerFlash(100, 100, 255, 0.08);
+      this.bgEnergy = Math.min(1, this.bgEnergy + 0.3);
     }
 
     for (const bh of result.bricksHit) {
@@ -498,8 +519,10 @@ export class GameEngine {
         }
 
         this.triggerFlash(255, 200, 50, 0.06 + this.chaosLevel * 0.02);
+        this.bgEnergy = Math.min(1, this.bgEnergy + 0.5);
       } else {
         this.particles.brickHit(bh.hitX, bh.hitY, color);
+        this.bgEnergy = Math.min(1, this.bgEnergy + 0.1);
       }
     }
 
@@ -607,7 +630,7 @@ export class GameEngine {
     const chaos = this.chaosLevel;
 
     // Background
-    drawBackground(ctx, W, H, chaos, this.time);
+    drawBackground(ctx, W, H, chaos, this.time, this.bgEnergy);
 
     // Bricks
     drawBricks(ctx, this.bricks, chaos);

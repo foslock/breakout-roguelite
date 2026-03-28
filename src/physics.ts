@@ -140,6 +140,15 @@ export function stepPhysics(
       ball.vx = nvx;
       ball.vy = nvy;
 
+      // Enforce minimum vertical component to avoid nearly-horizontal shots
+      const bSpeed = Math.hypot(ball.vx, ball.vy);
+      const minVy = bSpeed * BALL_MIN_VY_RATIO;
+      if (Math.abs(ball.vy) < minVy) {
+        ball.vy = Math.sign(ball.vy) * minVy;
+        const remaining = Math.sqrt(Math.max(0, bSpeed * bSpeed - minVy * minVy));
+        ball.vx = Math.sign(ball.vx) * remaining;
+      }
+
       // Push ball out of brick along normal
       const penetration = ball.radius - Math.hypot(
         ball.x - Math.max(brick.x, Math.min(ball.x, brick.x + brick.width)),
