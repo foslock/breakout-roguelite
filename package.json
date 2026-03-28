@@ -1,0 +1,16 @@
+{
+  "name": "breakout-roguelite",
+  "version": "1.0.0",
+  "description": "A breakout-inspired roguelite with persistent upgrades",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vite": "^5.1.0"
+  }
+}
