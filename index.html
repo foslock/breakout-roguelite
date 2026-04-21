@@ -29,10 +29,35 @@
       display: block;
       touch-action: none;
     }
+    #reset-btn {
+      position: fixed;
+      top: 8px;
+      right: 8px;
+      z-index: 10;
+      padding: 6px 8px;
+      font-family: "Press Start 2P", monospace;
+      font-size: 8px;
+      color: #ff3366;
+      background: rgba(15, 15, 35, 0.65);
+      border: 1px solid #ff3366;
+      border-radius: 4px;
+      cursor: pointer;
+      text-shadow: 0 0 4px #ff3366;
+      box-shadow: 0 0 6px rgba(255, 51, 102, 0.35);
+      letter-spacing: 1px;
+      transition: background 0.12s ease;
+    }
+    #reset-btn:hover {
+      background: rgba(255, 51, 102, 0.22);
+    }
+    #reset-btn:active {
+      transform: translateY(1px);
+    }
   </style>
 </head>
 <body>
   <canvas id="game"></canvas>
+  <button id="reset-btn" type="button" aria-label="Reset game progress">RESET</button>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

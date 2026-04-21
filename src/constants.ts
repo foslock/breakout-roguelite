@@ -78,6 +78,7 @@ export const SHOP_CARD_GAP = 10;
 export const SHOP_CARD_H = 172;
 export const SHOP_HEADER_H = 92;
 export const SHOP_FOOTER_H = 84;
+export const SHOP_MAX_CONTENT_W = 640;
 
 // Upgrade IDs
 export const UPGRADE_PADDLE_WIDTH  = 'paddle_width';

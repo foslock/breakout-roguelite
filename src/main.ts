@@ -7,4 +7,10 @@ if (!canvas) throw new Error('Canvas element not found');
 document.fonts.ready.then(() => {
   const engine = new GameEngine(canvas);
   engine.start();
+
+  const resetBtn = document.getElementById('reset-btn');
+  resetBtn?.addEventListener('click', () => {
+    const ok = window.confirm('Reset all progress? This cannot be undone.');
+    if (ok) engine.reset();
+  });
 });
