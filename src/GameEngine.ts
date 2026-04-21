@@ -25,6 +25,12 @@ export class GameEngine {
   private dpr: number;
 
   private state: GameState = 'TITLE';
+  onStateChange: ((state: GameState) => void) | null = null;
+
+  private setState(s: GameState): void {
+    this.state = s;
+    this.onStateChange?.(s);
+  }
   private playerState!: PlayerState;
 
   // Round-time state
@@ -168,7 +174,7 @@ export class GameEngine {
       if (e.key === 'ArrowLeft')  this.paddle.x = Math.max(0, this.paddle.x - 10);
       if (e.key === 'ArrowRight') this.paddle.x = Math.min(this.W - this.paddle.width, this.paddle.x + 10);
       if (e.key === ' ' || e.key === 'Enter') this.handleAction();
-      if (e.key === 'r' && e.shiftKey) { clearState(); this.playerState = loadState(); this.state = 'TITLE'; }
+      if (e.key === 'r' && e.shiftKey) { clearState(); this.playerState = loadState(); this.setState('TITLE'); }
     });
   }
 
@@ -272,7 +278,7 @@ export class GameEngine {
     this.particles.clear();
     this.spawnBallOnPaddle();
 
-    this.state = 'LAUNCH';
+    this.setState('LAUNCH');
   }
 
   private spawnBallOnPaddle(): void {
@@ -303,7 +309,7 @@ export class GameEngine {
         ball.vy = Math.cos(angle) * speed * -1;
       }
     }
-    this.state = 'PLAYING';
+    this.setState('PLAYING');
   }
 
   private endRound(won: boolean): void {
@@ -322,7 +328,7 @@ export class GameEngine {
 
     this.summaryTimer = 0;
     this.summaryContinueAlpha = 0;
-    this.state = 'ROUND_SUMMARY';
+    this.setState('ROUND_SUMMARY');
 
     if (won) {
       this.particles.winCelebration(this.W, this.H);
@@ -332,7 +338,7 @@ export class GameEngine {
 
   private goToShop(): void {
     this.shopScroll = { y: 0, vy: 0, touchStartY: 0, touchLastY: 0, isTouching: false, maxScroll: 0 };
-    this.state = 'SHOP';
+    this.setState('SHOP');
   }
 
   reset(): void {
@@ -348,7 +354,7 @@ export class GameEngine {
     this.screenFlash.alpha = 0;
     this.bgEnergy = 0;
     this.shopScroll = { y: 0, vy: 0, touchStartY: 0, touchLastY: 0, isTouching: false, maxScroll: 0 };
-    this.state = 'TITLE';
+    this.setState('TITLE');
   }
 
   // ─── Shop scroll ────────────────────────────────────────────────────────────

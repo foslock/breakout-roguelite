@@ -9,8 +9,13 @@ document.fonts.ready.then(() => {
   engine.start();
 
   const resetBtn = document.getElementById('reset-btn');
-  resetBtn?.addEventListener('click', () => {
-    const ok = window.confirm('Reset all progress? This cannot be undone.');
-    if (ok) engine.reset();
-  });
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      const ok = window.confirm('Reset all progress? This cannot be undone.');
+      if (ok) engine.reset();
+    });
+    engine.onStateChange = (state) => {
+      resetBtn.style.display = (state === 'LAUNCH' || state === 'PLAYING') ? 'none' : '';
+    };
+  }
 });

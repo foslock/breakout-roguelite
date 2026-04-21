@@ -310,7 +310,7 @@ export function drawHUD(
   glowText(ctx, `RND ${round}`, 10, 10, '#a5b4fc', '#6366f1', 8);
 
   // Ball count
-  const ballStr = `◉×${ballCount}`;
+  const ballStr = `BALLS ${ballCount}`;
   const ballW = ctx.measureText(ballStr).width;
   glowText(ctx, ballStr, w / 2 - ballW / 2, 10, '#00ff88', '#00cc66', 8);
 
@@ -618,11 +618,11 @@ export function drawShop(
 
     // Category label
     ctx.font = `10px ${FONT}`;
-    ctx.textAlign = 'left';
+    ctx.textAlign = 'center';
     ctx.fillStyle = cat.color;
     ctx.shadowColor = cat.color;
     ctx.shadowBlur = 8;
-    ctx.fillText(`— ${cat.label} —`, contentX, rowY + 14);
+    ctx.fillText(`— ${cat.label} —`, contentX + contentW / 2, rowY + 14);
     ctx.shadowBlur = 0;
     rowY += 28;
 
