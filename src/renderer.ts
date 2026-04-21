@@ -4,6 +4,7 @@ import { UPGRADES, getDerivedStats, canAffordUpgrade } from './upgrades.ts';
 import {
   FONT, BRICK_COLORS, PADDLE_GRADIENT_A, PADDLE_GRADIENT_B, BG_COLOR,
   SHOP_PADDING, SHOP_CARD_GAP, SHOP_CARD_H, SHOP_HEADER_H, SHOP_FOOTER_H,
+  SHOP_MAX_CONTENT_W,
 } from './constants.ts';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -313,10 +314,10 @@ export function drawHUD(
   const ballW = ctx.measureText(ballStr).width;
   glowText(ctx, ballStr, w / 2 - ballW / 2, 10, '#00ff88', '#00cc66', 8);
 
-  // Points
+  // Points (reserve ~62px on the right for the Reset button)
   const pointsStr = `${totalPoints} PTS`;
   const ptsW = ctx.measureText(pointsStr).width;
-  glowText(ctx, pointsStr, w - ptsW - 10, 10, '#fbbf24', '#f59e0b', 8);
+  glowText(ctx, pointsStr, w - ptsW - 72, 10, '#fbbf24', '#f59e0b', 8);
 
   // Round points in the middle-ish
   if (roundPoints > 0) {
@@ -589,9 +590,11 @@ export function drawShop(
   ctx.fillStyle = 'rgba(255,255,255,0.3)';
   ctx.fillText(`~${roundEst} pts/round`, w / 2, 75);
 
-  // ── Cards layout ──
-  const cols = w < 480 ? 2 : 4;
-  const cardW = (w - SHOP_PADDING * 2 - SHOP_CARD_GAP * (cols - 1)) / cols;
+  // ── Cards layout (centered, capped width on wide screens) ──
+  const contentW = Math.min(w - SHOP_PADDING * 2, SHOP_MAX_CONTENT_W);
+  const contentX = (w - contentW) / 2;
+  const cols = contentW < 480 ? 2 : 4;
+  const cardW = (contentW - SHOP_CARD_GAP * (cols - 1)) / cols;
   const cards: UpgradeCard[] = [];
 
   // Clip scrollable area
@@ -619,7 +622,7 @@ export function drawShop(
     ctx.fillStyle = cat.color;
     ctx.shadowColor = cat.color;
     ctx.shadowBlur = 8;
-    ctx.fillText(`— ${cat.label} —`, SHOP_PADDING, rowY + 14);
+    ctx.fillText(`— ${cat.label} —`, contentX, rowY + 14);
     ctx.shadowBlur = 0;
     rowY += 28;
 
@@ -630,7 +633,7 @@ export function drawShop(
         const currentLevel = playerState.upgrades[upg.id] ?? 0;
         const maxed = currentLevel >= upg.maxLevel;
         const affordable = !maxed && canAffordUpgrade(playerState, upg.id);
-        const cx = SHOP_PADDING + j * (cardW + SHOP_CARD_GAP);
+        const cx = contentX + j * (cardW + SHOP_CARD_GAP);
         const cy = rowY;
 
         // Store hitbox (in canvas coords, accounting for scroll)

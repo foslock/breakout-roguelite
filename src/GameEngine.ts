@@ -16,7 +16,7 @@ import {
   BALL_BASE_SPEED, BALL_SPEED_PER_ROUND, BALL_MAX_SPEED,
   BALL_RADIUS, BALL_TRAIL_LENGTH, PADDLE_HEIGHT, PADDLE_BOTTOM_OFFSET,
   MAX_BALLS, WIN_BONUS_PERCENT, SHOP_FOOTER_H, SHOP_HEADER_H,
-  SHOP_CARD_H, SHOP_CARD_GAP,
+  SHOP_CARD_H, SHOP_CARD_GAP, SHOP_PADDING, SHOP_MAX_CONTENT_W,
 } from './constants.ts';
 
 export class GameEngine {
@@ -335,6 +335,22 @@ export class GameEngine {
     this.state = 'SHOP';
   }
 
+  reset(): void {
+    clearState();
+    this.playerState = loadState();
+    this.balls = [];
+    this.bricks = [];
+    this.particles.clear();
+    this.roundPoints = 0;
+    this.roundBricksDestroyed = 0;
+    this.roundTotalBricks = 0;
+    this.ballIdCounter = 0;
+    this.screenFlash.alpha = 0;
+    this.bgEnergy = 0;
+    this.shopScroll = { y: 0, vy: 0, touchStartY: 0, touchLastY: 0, isTouching: false, maxScroll: 0 };
+    this.state = 'TITLE';
+  }
+
   // ─── Shop scroll ────────────────────────────────────────────────────────────
 
   private clampShopScroll(): void {
@@ -343,8 +359,9 @@ export class GameEngine {
   }
 
   private computeShopMaxScroll(): void {
-    // Approximate content height
-    const cols = this.W < 480 ? 2 : 4;
+    // Approximate content height (match drawShop's centered layout)
+    const contentW = Math.min(this.W - SHOP_PADDING * 2, SHOP_MAX_CONTENT_W);
+    const cols = contentW < 480 ? 2 : 4;
     let contentH = SHOP_HEADER_H;
     const catCounts = [
       UPGRADES.filter(u => u.category === 'paddle').length,
